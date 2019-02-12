@@ -10,9 +10,7 @@ error_tolerance = 3; % meters
 load config_default.mat;
 config = config_default;
 config.num_of_sources = 10;
-config.num_of_microphones = 10;
 config.src_num_of_clusters = config.num_of_sources;
-config.correspondence_noise = 0;
 config.drift = 0; % no noise
 
 data = generateTDOAData(config);
@@ -21,7 +19,7 @@ locations = asfs2D(data.tdoas, config.speed_of_sound);
 
 if locations.isValid
     mics_comp = locations.mics;
-    [lse, R, T, isValid] = leastSquareFitting2D(mics_comp, data.gt.mics);
+    [lse, R, T, isValid] = leastSquareFitting2D(mics_comp, data.gt.mics(1:2,:));
     micsRT = R * mics_comp + T;
    
     [h, w] = size(mics_comp);
