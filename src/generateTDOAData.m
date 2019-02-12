@@ -54,18 +54,25 @@ function data = generateTDOAData(config)
     for i=1:s_nc
         c_ub = min(cc(:,i) + s_cr, s_ub);
         c_lb = max(cc(:,i) - s_cr, s_lb);
-        cluster_poses = generatePositions(floor(ns/s_nc), c_ub, c_lb);
+        if i <= rem(ns, s_nc)
+            cluster_poses = generatePositions(ceil(ns/s_nc), c_ub, c_lb);
+        else
+            cluster_poses = generatePositions(floor(ns/s_nc), c_ub, c_lb);
+        end
         srcs = [srcs cluster_poses];
     end
-    for i=1:rem(ns, s_nc) 
-        srcs = [srcs generatePositions(1, s_ub, s_lb)];
-    end
+    %for i=1:rem(ns, s_nc) 
+    %    srcs = [srcs generatePositions(1, s_ub, s_lb)];
+    %end
     
     % generate microphone positions
     if strcmp(mic_positions_source, 'synthetic')
         mics = generatePositions(nm, m_ub, m_lb);
     elseif strcmp(mic_positions_source, 'tracks') 
         mics = extractPositionsFromTracks(tracks, tracks_config);
+        % find zero-means position for x-y-z plane, since generated sources
+        % locations assume zero-means
+        mics = mics - mean(mics, 2);
         %{
         valid_positions = false;
         % make sure the extracted positions are valid
@@ -91,7 +98,7 @@ function data = generateTDOAData(config)
     
     % find zero-means position for x-y-z plane, since generated sources
     % locations assume zero-means
-    mics = mics - mean(mics, 2);
+    % mics = mics - mean(mics, 2);
     
     % generate gaussian random noise to account for drifting in microphone
     % positions
