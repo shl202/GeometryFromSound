@@ -30,6 +30,7 @@ function [ix, iy] = approximateIntercept(x1, y1, x2, y2)
         y2 = y2';
     end
     
+    % find the best fit line
     mb1 = polyfit(x1, y1, 1);
     mb2 = polyfit(x2, y2, 1);
     
@@ -38,6 +39,7 @@ function [ix, iy] = approximateIntercept(x1, y1, x2, y2)
     m2 = mb2(1);
     b2 = mb2(2);
     
+	% find intercept using linear estimate
     ix = (b1 - b2) / (m2 - m1);
     iy = m1 * ix + b1;
 end
