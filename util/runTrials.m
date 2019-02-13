@@ -32,7 +32,7 @@ function stats = runTrials(configs, iterations, algorithm, eval_mode, seed)
     for c=1:length(configs)
         disp(['Configuration: ' num2str(c)]);
         distances = zeros(iterations, 1);
-        mses = zeros(iterations, 1);
+        mses = NaN(iterations, 1);
         invalid_cor = 0; % correspondences
         invalid_sam = 0; % samples
         invalid_loc = 0; % locations
@@ -76,7 +76,7 @@ function stats = runTrials(configs, iterations, algorithm, eval_mode, seed)
                 % We won't have ground truth data on microphone positions,
                 % but we can still have the sanity check if we know
                 % approximate initial prositions.
-                if( maxDistancePS(mics) > 1000 )
+                if( ~areLocationsReasonable(locations.mics) )
                     locations.isValid = false;
                     invalid_loc = invalid_loc + 1;
                     mses(it) = NaN;   
