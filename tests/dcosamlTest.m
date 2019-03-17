@@ -15,7 +15,7 @@ config.num_of_sources = 20;
 %config.mic_ub = [150 150 0]';
 %config.mic_lb = [-150 -150 -150]';
 config.src_num_of_clusters = config.num_of_sources;
-config.drift = 1.0; % no noise
+config.drift = 0; % no noise
 
 data = generateTDOAData(config);
 
