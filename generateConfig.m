@@ -38,7 +38,7 @@ else
     error('Undefined data type for microphone configuration.')
 end
 
-config_default.correspondence_noise = 0; % percentage of correlation noise(outliers)
+%config_default.correspondence_noise = 0; % percentage of correlation noise(outliers)
 config_default.drift = 10; % total drift of the AUV
 config_default.speed_of_sound = 1500; % speed of sound under water.
 config_default.tod_scale = 5; % span of time when sound source left from the source.
@@ -51,7 +51,7 @@ config_default.input_data_type = 'time_difference_of_arrival'; % ns x nm matrix
 
 
 %% Configurations for matching correspondences 
-config_default.correspondence_error_threshold = 0.20; % maximum error tolerated for correspondence noises.
+%config_default.correspondence_error_threshold = 0.20; % maximum error tolerated for correspondence noises.
 
 
 %% Configurations for source and microphone positions estimation algorithm
@@ -62,13 +62,13 @@ config_default.correspondence_error_threshold = 0.20; % maximum error tolerated 
 %config_default.algorithm = 'Thrun'; 
 
 % 3D
-config_default.algorithm = 'Pollefeys&Nister'; 
-config_default.minimal_case.num_of_sources = 5;
-config_default.minimal_case.num_of_microphones = 10;
-config_default.ransac_iterations = 25; % iterations of ransac to run for eliminating finding offset.
-config_default.ransac_error_tolerance = 0.01; % error tolerance of ransac to determine which sets of time of departures are consistent.
-config_default.min_flight_time = 0; % minimum time acceptable for a sound to leave from a source and reach a microphone. (in seconds)
-config_default.max_flight_time = Inf; % maximum time acceptable for a sound to leave from a source and reach a microphone. (in seconds)
+%config_default.algorithm = 'Pollefeys&Nister'; 
+%config_default.minimal_case.num_of_sources = 5;
+%config_default.minimal_case.num_of_microphones = 10;
+%config_default.ransac_iterations = 25; % iterations of ransac to run for eliminating finding offset.
+%config_default.ransac_error_tolerance = 0.01; % error tolerance of ransac to determine which sets of time of departures are consistent.
+%config_default.min_flight_time = 0; % minimum time acceptable for a sound to leave from a source and reach a microphone. (in seconds)
+%config_default.max_flight_time = Inf; % maximum time acceptable for a sound to leave from a source and reach a microphone. (in seconds)
 
 % Remove the existing configuration
 delete('config_default.mat');
