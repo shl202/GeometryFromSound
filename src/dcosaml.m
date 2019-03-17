@@ -27,9 +27,10 @@ function locations = dcosaml(tdoas, speed_of_sound)
     tods = computeTODs(tdoas);
     locations = computeSAMLocationsFromTOFs(tdoas, tods, speed_of_sound);
     locations = refineSAMLocations(locations, tdoas, tods, speed_of_sound);
-    while (~locations.isValid) && (counter < 5)
-        tods = computeTODs(tdoas);
-        locations = computeSAMLocationsFromTOFs(tdoas, tods, speed_of_sound);
-        locations = refineSAMLocations(locations, tdoas, tods, speed_of_sound);
-    end
+    %while (~locations.isValid) && (counter < 5)
+    %    tods = computeTODs(tdoas);
+    %    locations = computeSAMLocationsFromTOFs(tdoas, tods, speed_of_sound);
+    %    locations = refineSAMLocations(locations, tdoas, tods, speed_of_sound);
+    %    counter = counter + 1;
+    %end
 end
