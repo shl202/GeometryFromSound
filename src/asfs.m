@@ -19,8 +19,8 @@ function locations = asfs(tdoas, speed_of_sound)
 %            Neural Information Processing Systems 18 Neural Information
 %            Processing Systems, 2005, pp. 1353–1360.
 %
-
-	%check for minimum tdoas dimension required.
+    
+    % check for minimum tdoas dimension required.
     if ~all(size(tdoas) > [3,3])
         error("Insufficient number of sound sources or microphones");
     end
@@ -71,7 +71,7 @@ function locations = asfs(tdoas, speed_of_sound)
     %}
     
     % Populate output struct
-	locations.C = C;
+    locations.C = C;
     locations.S = NaN;
     locations.M = NaN;
     locations.srcs = NaN;
