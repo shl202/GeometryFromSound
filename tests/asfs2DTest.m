@@ -5,7 +5,7 @@ addpath('../src');
 addpath('../data');
 
 % error tolerances of this test
-error_tolerance = 3; % meters
+error_tolerance = 2.5^2; % meters
 
 load config_default.mat;
 config = config_default;
@@ -26,10 +26,10 @@ if locations.isValid
     mse = 1/w * lse;
 
     figure;
-    myscatter2(micsRT, data.gt.mics(1:2, :));
-    
-    %figure;
-    %myscatter2(micsRT2, mics_gt(1:2, :));
+    myscatter2(micsRT, 35, 'r', 'x'); hold on;
+    myscatter2(data.gt.mics(1:2, :), 35, 'g', 'o');
+    myscatterlines2(micsRT, data.gt.mics(1:2,:));
+
     mse
 
     assert(mse < error_tolerance);
