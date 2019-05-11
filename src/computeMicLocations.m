@@ -30,7 +30,7 @@ function [correspondences, sample, locations] = computeMicLocations(data, config
 %                                  computed for Q matrix;
 %   
     % affine structure from sound 2D
-    if strcmpi(algorithm, 'asfs2D')
+    if strcmpi(algorithm, 'asfs2d')
         correspondences.isValid = true;
         sample.isValid = true;
         try
@@ -42,7 +42,7 @@ function [correspondences, sample, locations] = computeMicLocations(data, config
         end
     
     % affine structure from sound 3D
-    elseif strcmpi(algorithm, 'asfs') || strcmpi(algorithm, 'asfs3D')
+    elseif strcmpi(algorithm, 'asfs') || strcmpi(algorithm, 'asfs3d')
         correspondences.isValid = true;
         sample.isValid = true;   
         try
@@ -64,6 +64,17 @@ function [correspondences, sample, locations] = computeMicLocations(data, config
             warning("locations has been set to invalid");
             locations.isValid = false;     
         end
+        
+    elseif strcmpi(algorithm, 'dcosamlplanararray')
+        correspondences.isValid = true;
+        sample.isValid = true;
+        try
+            locations = dcosamlPlanarArray(data.tdoas, config.speed_of_sound);
+        catch ME
+            warning(ME.message);
+            warning("locations has been set to invalid");
+            locations.isValid = false;     
+        end
     
     % affine structure from sound 3D with ransac
     elseif strcmpi(algorithm, 'ransacasfs') || strcmpi(algorithm, 'ransacasfs3D') 
@@ -72,19 +83,40 @@ function [correspondences, sample, locations] = computeMicLocations(data, config
         [ns, nm] = size(data.tdoas);
         
         % parameters for ransac and asfs3D 
-        minCase = 9;
-        T = 3; % rmse of microphone position estimates
+        minCase = 6;
+        T = 36.38; % = 300/sqrt(17)/2 rmse of microphone position estimates
         Pgood = 3/4; % estimated percentage of sound sources that are good  
         K = floor(Pgood * ns);
-        Pfail = 0.005;
+        Pfail = 0.001;
         L = ceil(log(Pfail)/log(1-(Pgood^minCase)));
         try
-            [~, sample, locations] = ransacMicLocations(data, config, 'asfs3D', minCase, T, K, L);
+            [~, sample, locations] = ransacMicLocations(data, config, 'asfs3d', minCase, T, K, L);
+        catch ME
+            warning(ME.message);
+            warning("locations has been set to invalid");
+            sample.isValid = false;
+            locations.isValid = false;     
+        end
+    
+    % direct computation of source and microphone locations
+    elseif strcmpi(algorithm, 'asfs2n3d')
+        correspondences.isValid = true;
+        sample.isValid = true;
+        try
+            locations = asfs2n3D(data.tdoas, config.speed_of_sound);
         catch ME
             warning(ME.message);
             warning("locations has been set to invalid");
             locations.isValid = false;     
         end
+        
+    % returns the ground truth drift (not actually an estimation algorithm)
+    elseif strcmpi(algorithm, 'gtdrift')
+        correspondences.isValid = true;
+        sample.isValid = true;
+        locations.isValid = true;
+        locations.mics = data.gt.mics_drift;
+    
     else 
         error([algorithm ' is not supported.'])
     end
