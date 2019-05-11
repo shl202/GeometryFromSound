@@ -12,10 +12,10 @@ clear;
 
 % Sound sources
 config_default.num_of_sources = 20;
-config_default.src_ub = [2000 2000 0]';
-config_default.src_lb = [-2000 -2000 -2000]';
+config_default.src_ub = [1500 1500 0]';
+config_default.src_lb = [-1500 -1500 -1500]';
 config_default.src_num_of_clusters = 20;
-config_default.src_cluster_radius = 10;
+config_default.src_cluster_radius = 20;
 
 % Microphones
 config_default.mic_positions_source = 'tracks';
@@ -25,8 +25,12 @@ config_default.tracks_config_file = 'tracks_Mar23_config.mat';
 if strcmp(config_default.mic_positions_source, 'sythetic')
     tracks_config = NaN;
     config_default.num_of_microphones = 10;
-    config_default.mic_ub = [100 100 100]';
+    config_default.mic_ub = [100 100 0]';
     config_default.mic_lb = [-100 -100 -100]';
+    config_default.mic_ave_depth = -10;
+    config_default.drift_distance = [10 10 0]; % drift of the AUV distance
+    config_default.drift_duration = 240;       % only used for tracks
+    
 elseif strcmp(config_default.mic_positions_source, 'tracks')
     addpath('../data');
     file = load(config_default.tracks_config_file);
@@ -34,14 +38,17 @@ elseif strcmp(config_default.mic_positions_source, 'tracks')
     config_default.num_of_microphones = length(tracks_config.good_tracks);
     config_default.mic_ub = NaN;
     config_default.mic_lb = NaN;
+    config_default.mic_ave_depth = -10;
+    config_default.drift_distance = [10 10 0]; % only used for sythetic
+    config_default.drift_duration = 240;       % in seconds
 else
     error('Undefined data type for microphone configuration.')
 end
 
 %config_default.correspondence_noise = 0; % percentage of correlation noise(outliers)
-config_default.drift = 10; % total drift of the AUV
+
 config_default.speed_of_sound = 1500; % speed of sound under water.
-config_default.tod_scale = 5; % span of time when sound source left from the source.
+%config_default.tod_scale = 5; % span of time when sound source left from the source.
 
 
 %% Configurations for input data type
