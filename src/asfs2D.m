@@ -21,12 +21,10 @@ function locations = asfs2D(tdoas, speed_of_sound)
 %            Neural Information Processing Systems 18 Neural Information
 %            Processing Systems, 2005, pp. 1353–1360.
 %
-
-	% check for minimum tdoas dimension required.
+    % check for minimum tdoas dimension required.
     if ~all(size(tdoas) > [2,2])
         error("Insufficient number of sound sources or microphones");
     end
-    
     
     delta = tdoas' .* speed_of_sound;
     [U, S, V] = svd(delta, 'econ');
@@ -35,8 +33,6 @@ function locations = asfs2D(tdoas, speed_of_sound)
     V=V(:,1:2);
 
         function F = C_prime_loss(x)
-            %UNTITLED3 Summary of this function goes here
-            %   Detailed explanation goes here
             C = [x(1:2)';x(3:4)'];
             F =(sum((C*V').*(C*V'))-ones(1,size(V',2)))';
         end
@@ -47,7 +43,7 @@ function locations = asfs2D(tdoas, speed_of_sound)
     % options = optimset('display','off');
     % options = optimoptions('lsqnonlin','Display','iter');
     % options = optimoptions('lsqnonlin','FunctionTolerance',1e-16);
-    options = optimoptions('lsqnonlin','Algorithm','levenberg-marquardt');
+    options = optimoptions('lsqnonlin','Algorithm','levenberg-marquardt','display', 'off');
     % options = optimoptions('lsqnonlin','display','off');
 
     % optns.Algorithm = 'levenberg-marquardt';
@@ -63,6 +59,7 @@ function locations = asfs2D(tdoas, speed_of_sound)
     % matlab optimization
     X =  U*S*inv(C); % = (U*S)/C ;
     %X = (U*S)/C;
+    Gamma = C * V';
 
     alpha = -atan2(X(1,2),X(1,1));
 
@@ -70,7 +67,8 @@ function locations = asfs2D(tdoas, speed_of_sound)
         sin(alpha) cos(alpha)];
     
     % Populate output struct
-	locations.C = C;
+    locations.C = C;
+    locations.Gamma = Gamma;
     locations.S = NaN;
     locations.M = NaN;
     locations.srcs = NaN;
