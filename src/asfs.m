@@ -32,8 +32,6 @@ function locations = asfs(tdoas, speed_of_sound)
     V=V(:,1:3);
 
         function F = C_prime_loss(x)
-            %UNTITLED3 Summary of this function goes here
-            %   Detailed explanation goes here
             C = [x(1:3)';x(4:6)';x(7:9)'];
             F =(sum((C*V').*(C*V'))-ones(1,size(V',2)))';
         end
@@ -44,7 +42,7 @@ function locations = asfs(tdoas, speed_of_sound)
     % options = optimset('display','off');
     % options = optimoptions('lsqnonlin','Display','iter');
     % options = optimoptions('lsqnonlin','FunctionTolerance',1e-16);
-    options = optimoptions('lsqnonlin','Algorithm','levenberg-marquardt');
+    options = optimoptions('lsqnonlin','Algorithm','levenberg-marquardt','display', 'off');
     % options = optimoptions('lsqnonlin','display','off');
 
     % optns.Algorithm = 'levenberg-marquardt';
@@ -60,6 +58,7 @@ function locations = asfs(tdoas, speed_of_sound)
     % matlab optimization
     X =  U*S*inv(C); % = (U*S)/C ;
     %X = (U*S)/C;
+    Gamma = C * V';
 
     % Since we can't retrive the rotation in 3D approach as we do in 2D,
     % but retrieving the relate geometry is sufficient.
@@ -72,6 +71,7 @@ function locations = asfs(tdoas, speed_of_sound)
     
     % Populate output struct
     locations.C = C;
+    locations.Gamma = Gamma;
     locations.S = NaN;
     locations.M = NaN;
     locations.srcs = NaN;
