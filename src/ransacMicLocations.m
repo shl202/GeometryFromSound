@@ -40,7 +40,7 @@ function [correspondences, sample, locations] =  ransacMicLocations(data, config
     end
     
     if ~exist('T', 'var')
-        T = 5;
+        T = 300/4;
     end
     
     if ~exist('K', 'var')
@@ -80,7 +80,7 @@ function [inliers, isValid] =  findInliers(data, config, algorithm, minCase, T, 
     it = 0;
     
     while it < L
-        rs = randperm(ns);
+        rs = randperm(ns); % random sources
         head = rs(1:minCase);
         tail = rs(minCase+1:end);
         
@@ -91,25 +91,27 @@ function [inliers, isValid] =  findInliers(data, config, algorithm, minCase, T, 
         % list of sources consistent with the initial sources
         consisSrcs = head;
         
-        % verify consistency with remaining sources
-        for j=1:length(tail)
-            veriSample.tdoas = [data.tdoas(consisSrcs, :); data.tdoas(tail(j), :)];
-            [~, ~, vslocs] = computeMicLocations(veriSample, config, algorithm);
-            [lse, ~, ~, ~] = leastSquareFitting3D(islocs.mics, vslocs.mics);
-            rmse = sqrt(1/nm * lse);
-            if rmse < T
-                consisSrcs = [consisSrcs tail(j)];
+        if areLocationsReasonable(islocs.mics)
+            % verify consistency with remaining sources
+            for j=1:length(tail)
+                veriSample.tdoas = [data.tdoas(consisSrcs, :); data.tdoas(tail(j), :)];
+                [~, ~, vslocs] = computeMicLocations(veriSample, config, algorithm);
+                [lse, ~, ~, ~] = leastSquareFitting3D(islocs.mics, vslocs.mics);
+                rmse = sqrt(1/nm * lse);
+                if rmse < T
+                    consisSrcs = [consisSrcs tail(j)];
+                end
+            end
+
+
+            % find size of consisSrcs
+            if length(consisSrcs) > K
+                inliers = consisSrcs;
+                it = L; 
             end
         end
         
-
-        % find size of consisSrcs
-        if length(consisSrcs) > K
-            inliers = consisSrcs;
-            it = L; 
-        else
-            it = it + 1;
-        end
+        it = it + 1;
     end
     
     if isempty(inliers)
