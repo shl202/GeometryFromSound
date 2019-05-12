@@ -1,4 +1,4 @@
-function locations = computeSAMLocationsFromTOFs(tdoas, tods, speed_of_sound)
+function locations = computeSAMLocationsFromTOFs(tdoas, tods, speed_of_sound, rank)
 % computeSAMLocationsFromTOFs
 %
 % @usage: locations = computeSAMLocationsFromTOFs(tdoas, tods, speed_of_speed)
@@ -6,6 +6,7 @@ function locations = computeSAMLocationsFromTOFs(tdoas, tods, speed_of_sound)
 % @param1: tdoas, time difference of arrival data 
 % @param2: tods, time of departure data
 % @param3: speed of sound. (~1500 meter per second underwater)
+% @param4: rank, rank of the matrix (5 for 3D and 4 for 2D)
 % @return1: locations struct
 %               locations.S, S matrix (5 by ns)
 %               locations.M, M matrix (5 by nm)
@@ -24,14 +25,21 @@ function locations = computeSAMLocationsFromTOFs(tdoas, tods, speed_of_sound)
 %            Speech and Signal Processing - Proceedings. 2445-2448. 
 %            10.1109/ICASSP.2008.4518142. 
 
+    if ~(rank == 4 || rank == 5)
+        error(["Rank " rank " is not supported. Please use rank 5 for 3D problem and rank 4 for 2D problem"])
+    end
+    
     % compute time of flight
     tofs = (tdoas.^2 - 2 * tdoas.*tods + tods.^2);
+    %tofs = (tdoas.^2 - 2 * tdoas.*tods);
     distances = speed_of_sound^2 * tofs;
     
     % Compute Shat and Mhat matrices
     [U, Sigma, V] = svd(distances, 'econ');
-    Shat = (U(:, 1:5)  * Sigma(1:5, 1:5))';
-    Mhat = V(:, 1:5)';
+    Shat = (U(:, 1:rank) * Sigma(1:rank, 1:rank))';
+    Mhat = V(:, 1:rank)';
+    %Shat = (U(:, [1 (7-rank):5])  * Sigma([1 (7-rank):5], [1 (7-rank):5]))';
+    %Mhat = V(:, [1 (7-rank):5])';
 
     % Compute HM and HS matrices
     HM = computeHM(Mhat);
@@ -49,34 +57,34 @@ function locations = computeSAMLocationsFromTOFs(tdoas, tods, speed_of_sound)
         -1/2 0 0 0 0; 
         ];
     %}
-    
+   
     % Compute Mprimehat
     Mprimehat = HS * HM * Mhat;
-      
+
     % check for problem with rank deficency
     if sum(sum(~isnan(Mprimehat))) 
         % Compute Q Matrix
-        Q = computeQ(Mprimehat);
+        Q = computeQ(Mprimehat, rank);
 
         % Compute HQ Matrix
-        [HQ, HQIsValid] = computeHQ(Q, eye(3), zeros(1, 3)');
-        
+        [HQ, HQIsValid] = computeHQ(Q, eye(rank-2), zeros(1, rank-2)', rank);
+
         % Complete the computation if HQ is valid
         % HQ is invalid if we can take the cholesky factorization of Q(2:4, 2:4) 
         if HQIsValid
 
             % Compute H by combining HQ, HS, HM
             H = HQ * HS * HM;
-            
+
             % Estimate S and M 
             % (Shat' / H)' = (Shat' * inv(H))'; matlab optimization
             S = (Shat' / H)';  
             M = H * Mhat;
-            
+
             locations.S = S;
             locations.M = M;
-            locations.srcs = -1/2 * S(2:4, :);
-            locations.mics = M(2:4, :);
+            locations.srcs = -1/2 * S(2:rank-1, :);
+            locations.mics = M(2:rank-1, :);
             locations.isValid = true;
         else
             locations.S = NaN;
@@ -96,20 +104,32 @@ end
 
 
 %% Helper Functions
-function c = computeCoef(m)
-    c = [
-        m(1)^2;
-        2*m(1)*m(2);
-        2*m(1)*m(3);
-        2*m(1)*m(4);
-        m(2)^2;
-        2*m(2)*m(3);
-        2*m(2)*m(4);
-        m(3)^2;
-        2*m(3)*m(4);
-        m(4)^2;
-        2*m(1)*m(5)
+function c = computeCoef(m, rank)
+    if rank == 4
+        c = [
+            m(1)^2;
+            2*m(1)*m(2);
+            2*m(1)*m(3);
+            m(2)^2;
+            2*m(2)*m(3);
+            m(3)^2;
+            2*m(1)*m(4)
         ]';
+    elseif rank == 5
+        c = [
+            m(1)^2;
+            2*m(1)*m(2);
+            2*m(1)*m(3);
+            2*m(1)*m(4);
+            m(2)^2;
+            2*m(2)*m(3);
+            2*m(2)*m(4);
+            m(3)^2;
+            2*m(3)*m(4);
+            m(4)^2;
+            2*m(1)*m(5)
+        ]';
+    end
 end
 
 function HM = computeHM(Mhat)
@@ -120,13 +140,13 @@ function HM = computeHM(Mhat)
     HM = [ hMT; [Z I] ];
 end
 
-function [HQ, isValid] = computeHQ(Q, R, t)
+function [HQ, isValid] = computeHQ(Q, R, t, rank)
  
     isValid = true;
     
     % Use nearestSPD() to convert Q to the nearest positive semidefinite
     % matrix
-    [K, p] = chol(nearestSPD(Q(2:4, 2:4)));
+    [K, p] = chol(nearestSPD(Q(2:rank-1, 2:rank-1)));
     
     % check if chol failed (when p > 0)
     if p~=0
@@ -135,9 +155,9 @@ function [HQ, isValid] = computeHQ(Q, R, t)
     end
    
     HQ = [
-        1              0 0 0                            0       ;
-        t              R*K                              [0 0 0]';
-        t'*t - Q(1, 1) 2*(t'*K -[Q(1,2) Q(1,3) Q(1,4)]) 1 
+        1              zeros(1, rank-2)           0 ;
+        t              R*K                        zeros(rank-2, 1);
+        t'*t - Q(1, 1) 2*(t'*K - Q(1,2:rank-1) )  1 
     ];
 end
 
@@ -146,21 +166,24 @@ function HS = computeHS(Shat)
     I = eye(h-1);
     Z = zeros(1, h-1);
     
-    hSprime = ones(1,w) / Shat(2:5, :);
+    hSprime = ones(1,w) / Shat(2:h, :);
     hS = [0 hSprime]';
     
     HS = inv([ [I; Z] hS ]);  
 end
 
-function Q = computeQ(Mprimehat)
+function Q = computeQ(Mprimehat, rank)
     [h, ~] = size(Mprimehat');
-    coefs = zeros(h, 11);
-
-    for i=1:h
-        coefs(i, :) = computeCoef(Mprimehat(:, i));
+    if rank == 4
+        coefs = zeros(h, 7);
+    elseif rank == 5
+        coefs = zeros(h, 11);
     end
 
-    
+    for i=1:h
+        coefs(i, :) = computeCoef(Mprimehat(:, i), rank);
+    end
+
     [U, Sigma, V] = svd(coefs);
     rns = find(diag(Sigma) < 0.00001);
     if isempty(rns)
@@ -171,14 +194,22 @@ function Q = computeQ(Mprimehat)
     %Qunscaled = null(coefs)
 
     Qp = Qunscaled ./ Qunscaled(end) .* -1/2;
-
-    Q = [
-        Qp(1)  Qp(2) Qp(3) Qp(4)  Qp(11);
-        Qp(2)  Qp(5) Qp(6) Qp(7)  0;
-        Qp(3)  Qp(6) Qp(8) Qp(9)  0;
-        Qp(4)  Qp(7) Qp(9) Qp(10) 0;
-        Qp(11) 0     0     0      0
+    if rank == 4
+        Q = [
+            Qp(1)  Qp(2) Qp(3) Qp(7);
+            Qp(2)  Qp(4) Qp(5) 0;
+            Qp(3)  Qp(5) Qp(6) 0;
+            Qp(7)  0     0     0
         ];
+    elseif rank == 5
+        Q = [
+            Qp(1)  Qp(2) Qp(3) Qp(4)  Qp(11);
+            Qp(2)  Qp(5) Qp(6) Qp(7)  0;
+            Qp(3)  Qp(6) Qp(8) Qp(9)  0;
+            Qp(4)  Qp(7) Qp(9) Qp(10) 0;
+            Qp(11) 0     0     0      0
+        ];
+    end
 end
 
 
