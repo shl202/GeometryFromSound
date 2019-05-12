@@ -1,21 +1,25 @@
 clear;
 
 % add source code folder
+addpath('../');
 addpath('../src');
 addpath('../data');
+addpath('../util');
 
 % error tolerances of this test
-error_tolerance = 2^3; % meters
+error_tolerance = 25; % meters
 
 load config_default.mat;
 config = config_default;
-config.mic_position_source = 'tracks';
+%config.mic_position_source = 'tracks';
+configs.mic_positions_source = 'synthetic';
+configs.num_of_microphones = 17;
+configs.mic_ub = [150 150 0]';
+configs.mic_lb = [-150 -150 -150]';
+configs.mic_ave_depth = -150/2;
 config.num_of_sources = 20;
-%config.num_of_microphones = 10;
-%config.mic_ub = [150 150 150]';
-%config.mic_lb = [-150 -150 -150]';
-config.src_num_of_clusters = config.num_of_sources;
-config.drift = 10; % noise
+config.src_num_of_clusters = 20;
+%config.drift = 10; % noise
 
 data = generateTDOAData(config);
 
@@ -27,7 +31,7 @@ if locations.isValid
     micsRT = R * mics_comp + T;
    
     [h, w] = size(mics_comp);
-    mse = 1/w * lse;
+    rmse = sqrt(1/w * lse);
 
     figure;
     myscatter3(micsRT, 45, 'g', '^'); hold on;
@@ -36,9 +40,9 @@ if locations.isValid
     
     %figure;
     %myscatter2(micsRT2, mics_gt(1:2, :));
-    mse
+    rmse
 
-    assert(mse < error_tolerance);
+    assert(rmse < error_tolerance);
 else
     assert(false)
 end
