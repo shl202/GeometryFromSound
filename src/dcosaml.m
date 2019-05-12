@@ -19,13 +19,14 @@ function locations = dcosaml(tdoas, speed_of_sound)
 
     % Check if we have enough sound sources and microphones
     [ns, nm] = size(tdoas);  
-    if ~((ns >=5 && nm >= 10) || (ns >=10 && nm >=5))
+    if ~(ns >=5 && nm >= 10) 
         error("Insufficient number of sound sources and microphones");
     end
     
     counter = 0;
-    tods = computeTODs(tdoas);
-    locations = computeSAMLocationsFromTOFs(tdoas, tods, speed_of_sound);
+    rank = 5;
+    tods = computeTODs(tdoas, rank);
+    locations = computeSAMLocationsFromTOFs(tdoas, tods, speed_of_sound, rank);
     locations = refineSAMLocations(locations, tdoas, tods, speed_of_sound);
     %while (~locations.isValid) && (counter < 5)
     %    tods = computeTODs(tdoas);
