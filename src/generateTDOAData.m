@@ -1,4 +1,4 @@
-function data = generateTDOAData(config)
+function data = generateTDOAData(config, tracks, tracks_config)
 % generateTDOAData
 % @description: generate a sxm matrix of time-difference-of-arrival data
 %               points with s sources and m microphones.
@@ -17,7 +17,7 @@ function data = generateTDOAData(config)
 %
     %% verify input parameter
     if ~exist('config', 'var')
-        load config_default.mat;
+        load config_default.mat config_default;
         config = config_default;
     end
     
@@ -31,21 +31,25 @@ function data = generateTDOAData(config)
     nm = config.num_of_microphones;
     m_ub = config.mic_ub;
     m_lb = config.mic_lb;
-    tod_scale = config.tod_scale;
-    drift = config.drift;
-    cor_noise = config.correspondence_noise;
+    %tod_scale = config.tod_scale;
+    drift_distance = config.drift_distance;
+    drift_duration = config.drift_duration;
+    %cor_noise = config.correspondence_noise;
     sos = config.speed_of_sound;
     tracks_file = config.tracks_file;
     tracks_config_file = config.tracks_config_file;
+    mic_ave_depth = config.mic_ave_depth;
     
     if (strcmp(mic_positions_source, 'tracks') && (all(~isnan(tracks_file))) && all((~isnan(tracks_config_file))))
-        %addpath should be done at a higher level to avoid being called
-        %multiple times
-        %addpath('../data');
-        tracks_file = load(tracks_file);
-        tracks = tracks_file.tracks;
-        tracks_config_file = load(tracks_config_file);
-        tracks_config = tracks_config_file.tracks_config;
+        if ~exist('tracks', 'var') || ~exist('tracks_config', 'var')
+            %addpath should be done at a higher level to avoid being called
+            %multiple times
+            %addpath('../data');
+            tracks_file = load(tracks_file);
+            tracks = tracks_file.tracks;
+            tracks_config_file = load(tracks_config_file);
+            tracks_config = tracks_config_file.tracks_config;
+        end
     end
     
     % generate src positions
@@ -56,11 +60,12 @@ function data = generateTDOAData(config)
         c_lb = max(cc(:,i) - s_cr, s_lb);
         if i <= rem(ns, s_nc)
             cluster_poses = generatePositions(ceil(ns/s_nc), c_ub, c_lb);
-        else
+        else 
             cluster_poses = generatePositions(floor(ns/s_nc), c_ub, c_lb);
         end
         srcs = [srcs cluster_poses];
     end
+    
     %for i=1:rem(ns, s_nc) 
     %    srcs = [srcs generatePositions(1, s_ub, s_lb)];
     %end
@@ -68,11 +73,33 @@ function data = generateTDOAData(config)
     % generate microphone positions
     if strcmp(mic_positions_source, 'synthetic')
         mics = generatePositions(nm, m_ub, m_lb);
+        % generate gaussian random noise to account for drifting in microphone
+        % positions
+        mics_drift = addGaussianNoise(mics, drift_distance);
+        
     elseif strcmp(mic_positions_source, 'tracks') 
-        mics = extractPositionsFromTracks(tracks, tracks_config);
+        [mics, mics_drift] = extractPositionsFromTracks(tracks, tracks_config, drift_duration);
+        
+        % extract a subset of the microphone if number of microphone
+        % specified in configuration is less than number of microphones in 
+        % tracks raise error if number of microphones
+        if nm < size(mics, 2)
+            mic_ids = randperm(nm);
+            mics = mics(:, mic_ids);
+            mics_drift = mics_drift(:, mic_ids);
+        elseif nm > size(mics, 2)
+            error("Not enough microphones in the track file.")
+        end
+        
         % find zero-means position for x-y-z plane, since generated sources
         % locations assume zero-means
+        mics_drift = mics_drift - mean(mics, 2);
         mics = mics - mean(mics, 2);
+         
+        % adjust depth to as specified by configuration
+        mics_drift = mics_drift + [0 0 mic_ave_depth]';
+        mics = mics + [0 0 mic_ave_depth]';
+        
         %{
         valid_positions = false;
         % make sure the extracted positions are valid
@@ -96,16 +123,10 @@ function data = generateTDOAData(config)
         error('Undefined data type for microphone configuration');
     end
     
-    % find zero-means position for x-y-z plane, since generated sources
-    % locations assume zero-means
-    % mics = mics - mean(mics, 2);
-    
-    % generate gaussian random noise to account for drifting in microphone
-    % positions
-    mics_drift = addGaussianNoise(mics, drift);
+
     
     % generate time of departures
-    tods_gt = tod_scale * generateTODs(ns);
+    tods_gt = drift_duration * generateTODs(ns);
     
     % generate time difference of arrival data
     % without gaussian noise
@@ -119,7 +140,7 @@ function data = generateTDOAData(config)
     % the percentage of drift along drift path.
     
     tofs_drift = timeOfFlights(srcs, mics_drift, sos);
-    tofs_gn = tofs_gt + tods_gt/tod_scale .* (tofs_drift - tofs_gt);
+    tofs_gn = tofs_gt + tods_gt/drift_duration .* (tofs_drift - tofs_gt);
     tdoas_gn = tods_gt + tofs_gn;
     
     tdoas_i1s = tdoas_gn(:, 1);
@@ -152,7 +173,9 @@ function data = generateTDOAData(config)
     data.tdoas = tdoas_gn_anchored;
     data.tofs = tofs_gn;
     ground_truth.srcs = srcs;
-    ground_truth.mics = mics;
+    % using the median mic positions as the gt
+    ground_truth.mics = (mics + mics_drift)/2;    
+    ground_truth.mics_drift = mics_drift;
     ground_truth.tods = tods_gt;
     ground_truth.toffset = toffset_gt;
     ground_truth.tofs = tofs_gt;
@@ -175,16 +198,16 @@ function poses_with_gn = addGaussianNoise(poses, noise_level)
     [h, w] = size(poses);
     poses_with_gn = zeros(h, w);
     for i =1:w
-        poses_with_gn(:, i) = poses(:, i) + randNormSphere(noise_level);
+        poses_with_gn(:, i) = poses(:, i) + randNormDrift(noise_level);
+        %poses_with_gn(:, i) = poses(:, i) + randNormCircle(noise_level);
     end
 end
 
-function noiseSphere = randNormSphere(noise_level)
-    noise = [normrnd(0, noise_level);
-             normrnd(0, noise_level);
-             normrnd(0, noise_level);
+function noise = randNormDrift(noise_level)
+    noise = [ normrnd(0, noise_level(1));
+              normrnd(0, noise_level(2));
+              normrnd(0, noise_level(3));
     ];        
-    noiseSphere = noise/norm([1, 1, 1]);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
