@@ -1,4 +1,4 @@
-function tods = computeTODs(tdoas)
+function tods = computeTODs(tdoas, rank)
 % computeTODs
 % @description: compute the time of departure using time difference of 
 %               arrival data
@@ -26,7 +26,7 @@ function tods = computeTODs(tdoas)
     B = tdoasZeroMean .* (-2);
     
     % minimal case is 5 srcs x 10 mics
-    group_size = 5;
+    group_size = rank;
     groups = assignRandomGroup(h, group_size);
 
     [num_of_groups, ~] = size(groups);
