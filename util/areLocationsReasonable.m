@@ -14,18 +14,29 @@ function alr = areLocationsReasonable(locations)
         alr = false;
     end
     %}
-
-    [~, S, ~] = svd(locations, 'econ');
     
-    % spread way bigger than initial positions
-    if S(1,1) > 1000
-        alr = false;
-    end
     
-    % rank deficiency errors
-    if S(1,1) > (S(2,2) * 1000)
-        alr = false;
+    % these checks make sense only where there are more than one
+    % microphone/AUEs
+    if size(locations, 2) > 1
+        
+        [~, S, ~] = svd(locations, 'econ');
+
+        % spread way bigger than initial positions
+        % based off initial spread of 300 x 300
+        if S(1,1) > 1000
+            alr = false;
+        end
+
+        % spread way smaller than initial positions
+        % based off initial spread of 300 x 300
+        if S(1, 1) < 100
+            alr = false;
+        end
+
+        % rank deficiency errors
+        if S(1,1) > (S(2,2) * 1000)
+            alr = false;
+        end
     end
-
-
 end
