@@ -1,7 +1,7 @@
 function locationsR = refineSAMLocations(locations, tdoas, tods, speed_of_sound)
             
     % Levenberg-Marquardt iterative refinement algorithm
-    options = optimoptions('lsqnonlin', 'Algorithm', 'levenberg-marquardt');
+    options = optimoptions('lsqnonlin', 'Algorithm', 'levenberg-marquardt', 'display', 'off');
     
     M = locations.M;
     S = locations.S;
@@ -10,6 +10,7 @@ function locationsR = refineSAMLocations(locations, tdoas, tods, speed_of_sound)
     s0 = locations.S;
     t0 = tods;
     
+    rank = size(locations.M, 1);
       
         function Fm = refine_mics(x)
             A = S';
@@ -62,8 +63,8 @@ function locationsR = refineSAMLocations(locations, tdoas, tods, speed_of_sound)
         if isreal(M)
             locationsR.S = S;
             locationsR.M = M;
-            locationsR.mics = M(2:4, :);
-            locationsR.srcs = S(2:4, :);
+            locationsR.mics = M(2:(rank-1), :);
+            locationsR.srcs = S(2:(rank-1), :);
             locationsR.isValid = locations.isValid;
         else
             locationsR.M = locations.M;
