@@ -45,6 +45,10 @@ if ~exist('tstart', 'var')
     tstart = tmin + rand * (tmax - tmin);
 end
 
+if (tstart < tmin) || (tstart > tmax)
+    error(['Start time is not in the range these tracks [' num2str(tmin) '-' num2str(tmax) ']']);
+end
+
 %duration = 120;
 tend = tstart + duration;
 
