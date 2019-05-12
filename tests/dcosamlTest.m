@@ -1,25 +1,34 @@
 clear;
 
 % add source code folder
+addpath('../');
 addpath('../src');
-addpath('../data'); 
+addpath('../data');
+addpath('../util');
 
 % error tolerances of this test
-error_tolerance = 3; % meters
+error_tolerance = 25; % meters
 
 load config_default.mat;
 config = config_default;
-config.mic_positions_source = 'tracks';
+%config.mic_positions_source = 'tracks';
+config.mic_positions_source = 'synthetic';
 config.num_of_sources = 20;
-%config.num_of_microphones = 10;
-%config.mic_ub = [150 150 0]';
-%config.mic_lb = [-150 -150 -150]';
+config.num_of_microphones = 17;
+config.mic_ub = [150 150 0]';
+config.mic_lb = [-150 -150 -1]';
 config.src_num_of_clusters = config.num_of_sources;
-config.drift = 0; % no noise
+config.drift_distance = [0 0 0]; % no noise
 
 data = generateTDOAData(config);
 
+tdoas = data.tdoas;
+speed_of_sound = config.speed_of_sound;
 locations = dcosaml(data.tdoas, config.speed_of_sound);
+%rank = 5;
+%tods = computeTODs(tdoas, rank);
+%locations = computeSAMLocationsFromTOFs(tdoas, tods, speed_of_sound, rank);
+%locations = refineSAMLocations(locations, tdoas, tods, speed_of_sound);
 
 if locations.isValid
     mics_comp = locations.mics;
@@ -27,15 +36,15 @@ if locations.isValid
     micsRT = R * mics_comp + T;
    
     [h, w] = size(mics_comp);
-    mse = 1/w * lse;
+    rmse = sqrt(1/w * lse);
 
     figure;
-    myscatter3(micsRT, 35, 'g', '^'); hold on;
-    myscatter3(data.gt.mics, 35, 'k', 'o');
+    myscatter2(micsRT, 35, 'g', '^'); hold on;
+    myscatter2(data.gt.mics, 35, 'k', 'o');
     %myscatterlines3(micsRT, data.gt.mics);
-    mse
+    rmse
 
-    assert(mse < error_tolerance);
+    assert(rmse < error_tolerance);
 else
     assert(false)
 end
