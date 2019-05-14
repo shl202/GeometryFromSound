@@ -57,6 +57,7 @@ function [lse, Rhat, That, isValid] = leastSquareFitting2D(ps1, ps2)
     end
     %}
     
-    lse = norm(qs2 - Rhat * qs1);
+    %lse = sum(vecnorm(qs2 - Rhat * qs1).^2);
+    lse = sum(sum( (qs2 - Rhat * qs1).^2 )); 
     That = c2 - Rhat * c1;  
 end
