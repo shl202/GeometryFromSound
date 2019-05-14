@@ -1,2 +1,2 @@
 # GeometryFromSound
-Evaluate Possible Techniques to Estimate Swarm Geometry from Ambient Sound.
+Evaluate Techniques to Estimate Swarm Geometry from Ambient Sound.
