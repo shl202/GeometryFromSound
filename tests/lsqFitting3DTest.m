@@ -34,7 +34,7 @@ end
     
 % Test rotation only
 RA = R * A; 
-[lse, r, t] = least_square_fitting_3D(A, RA);
+[lse, r, t] = leastSquareFitting3D(A, RA);
 
 disp('Rotation:');
 if( lse > threshold )
@@ -50,7 +50,7 @@ end
 
 % test both Translation and rotation
 TRA = R * A + T;
-[lse, r, t] = least_square_fitting_3D(A, TRA);
+[lse, r, t] = leastSquareFitting3D(A, TRA);
 
 disp('Translation and Rotation:');
 if( lse > threshold )
