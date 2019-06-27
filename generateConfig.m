@@ -11,34 +11,52 @@ clear;
 %% Configuration for data generation
 
 % Sound sources
+config_default.source_position_type = "random";
 config_default.num_of_sources = 20;
 config_default.src_ub = [1500 1500 0]';
 config_default.src_lb = [-1500 -1500 -1500]';
 config_default.src_num_of_clusters = 20;
+config_default.src_cluster_ub = [20 20 20]';
+config_default.src_cluster_lb = [-20 -20 -20]';
 config_default.src_cluster_radius = 20;
 
 % Microphones
-config_default.mic_positions_source = 'tracks';
+config_default.mic_positions_type = 'tracks';
 config_default.tracks_file = 'tracks_Mar23.mat';
 config_default.tracks_config_file = 'tracks_Mar23_config.mat';
+
 % either sythetic, or tracks
-if strcmp(config_default.mic_positions_source, 'sythetic')
+if strcmp(config_default.mic_positions_type, 'synthetic')
     tracks_config = NaN;
-    config_default.num_of_microphones = 10;
-    config_default.mic_ub = [100 100 0]';
-    config_default.mic_lb = [-100 -100 -100]';
+    config_default.num_of_microphones = 17;
+    config_default.mic_ub = [150 150 0]';
+    config_default.mic_lb = [-150 -150 -150]';
+    config_default.mic_num_groups = 1;
     config_default.mic_ave_depth = -10;
     config_default.drift_distance = [10 10 0]; % drift of the AUV distance
     config_default.drift_duration = 240;       % only used for tracks
     
-elseif strcmp(config_default.mic_positions_source, 'tracks')
-    addpath('../data');
+elseif strcmp(config_default.mic_positions_type, 'tracks')
+    addpath('data');
     file = load(config_default.tracks_config_file);
     tracks_config = file.tracks_config;
     config_default.num_of_microphones = length(tracks_config.good_tracks);
     config_default.mic_ub = NaN;
     config_default.mic_lb = NaN;
+    config_default.mic_num_groups = 1;
     config_default.mic_ave_depth = -10;
+    config_default.drift_distance = [10 10 0]; % only used for sythetic
+    config_default.drift_duration = 240;       % in seconds
+    
+elseif strcmp(config_default.mic_positions_type, 'planar_groups')
+    addpath('data');
+    file = load(config_default.tracks_config_file);
+    tracks_config = file.tracks_config;
+    config_default.num_of_microphones = length(tracks_config.good_tracks);
+    config_default.mic_ub = NaN;
+    config_default.mic_lb = NaN;
+    config_default.mic_num_groups = 2;
+    config_default.mic_ave_depth = [-10 -70]';
     config_default.drift_distance = [10 10 0]; % only used for sythetic
     config_default.drift_duration = 240;       % in seconds
 else
