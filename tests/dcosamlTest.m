@@ -12,13 +12,13 @@ error_tolerance = 25; % meters
 load config_default.mat;
 config = config_default;
 %config.mic_positions_source = 'tracks';
-config.mic_positions_source = 'synthetic';
+config.mic_positions_type = 'synthetic';
 config.num_of_sources = 20;
 config.num_of_microphones = 17;
 config.mic_ub = [150 150 0]';
 config.mic_lb = [-150 -150 -1]';
 config.src_num_of_clusters = config.num_of_sources;
-config.drift_distance = [0 0 0]; % no noise
+config.drift_distance = [0.0 0.0 0]; % no noise
 
 data = generateTDOAData(config);
 
